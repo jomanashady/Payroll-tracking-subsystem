@@ -13,12 +13,12 @@ export class StructureApproval {
 
   @Prop({
     type: Types.ObjectId,
-    ref: StructureChangeRequest.name,
+    ref: 'StructureChangeRequest',
     required: true,
   })
   changeRequestId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
   approverEmployeeId: Types.ObjectId;
 
   @Prop({

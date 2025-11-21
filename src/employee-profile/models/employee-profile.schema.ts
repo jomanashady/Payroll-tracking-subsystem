@@ -65,26 +65,26 @@ export class EmployeeProfile extends UserProfileBase {
   statusEffectiveFrom?: Date;
 
   // Org Structure links
-  @Prop({ type: Types.ObjectId, ref: Position.name })
+  @Prop({ type: Types.ObjectId, ref: 'Position' })
   primaryPositionId?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: Department.name })
+  @Prop({ type: Types.ObjectId, ref: 'Department' })
   primaryDepartmentId?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: Position.name })
+  @Prop({ type: Types.ObjectId, ref: 'Position' })
   supervisorPositionId?: Types.ObjectId;
 
   //Populated by Payroll subsystem once implemented)
   @Prop({ type: String })
   payGradeId?: string;
 
-  @Prop({ type: Types.ObjectId, ref: AppraisalRecord.name })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalRecord' })
   lastAppraisalRecordId?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: AppraisalCycle.name })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalCycle' })
   lastAppraisalCycleId?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: AppraisalTemplate.name })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalTemplate' })
   lastAppraisalTemplateId?: Types.ObjectId;
 
   @Prop({ type: Date })

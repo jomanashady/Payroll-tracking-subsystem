@@ -36,19 +36,19 @@ export class AppraisalRecord {
   @Prop({ type: Types.ObjectId, auto: true })
   _id: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: AppraisalAssignment.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalAssignment', required: true })
   assignmentId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: AppraisalCycle.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalCycle', required: true })
   cycleId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: AppraisalTemplate.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalTemplate', required: true })
   templateId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
   employeeProfileId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
   managerProfileId: Types.ObjectId;
 
   @Prop({ type: [RatingEntrySchema], default: [] })
@@ -82,7 +82,7 @@ export class AppraisalRecord {
   @Prop({ type: Date })
   hrPublishedAt?: Date;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile' })
   publishedByEmployeeId?: Types.ObjectId;
 
   @Prop({ type: Date })

@@ -15,10 +15,10 @@ export class Candidate extends UserProfileBase {
   @Prop({ type: String, required: true, unique: true })
   candidateNumber: string;
 
-  @Prop({ type: Types.ObjectId, ref: Department.name })
+  @Prop({ type: Types.ObjectId, ref: 'Department' })
   departmentId?: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: Position.name })
+  @Prop({ type: Types.ObjectId, ref: 'Position' })
   positionId?: Types.ObjectId;
 
   @Prop({ type: Date })

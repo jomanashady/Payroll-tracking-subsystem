@@ -19,7 +19,7 @@ export class StructureChangeLog {
   @Prop({ type: Types.ObjectId, required: true })
   entityId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile' })
   performedByEmployeeId?: Types.ObjectId;
 
   @Prop({ type: String })

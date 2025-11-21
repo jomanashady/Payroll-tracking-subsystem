@@ -17,7 +17,7 @@ export class StructureChangeRequest {
   @Prop({ type: String, required: true, unique: true })
   requestNumber: string;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
   requestedByEmployeeId: Types.ObjectId;
 
   @Prop({
@@ -46,7 +46,7 @@ export class StructureChangeRequest {
   })
   status: StructureRequestStatus;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile' })
   submittedByEmployeeId?: Types.ObjectId;
 
   @Prop({ type: Date })

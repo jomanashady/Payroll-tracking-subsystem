@@ -14,22 +14,22 @@ export class AppraisalAssignment {
   @Prop({ type: Types.ObjectId, auto: true })
   _id: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: AppraisalCycle.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalCycle', required: true })
   cycleId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: AppraisalTemplate.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalTemplate', required: true })
   templateId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
   employeeProfileId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
   managerProfileId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: Department.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'Department', required: true })
   departmentId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: Position.name })
+  @Prop({ type: Types.ObjectId, ref: 'Position' })
   positionId?: Types.ObjectId;
 
   @Prop({

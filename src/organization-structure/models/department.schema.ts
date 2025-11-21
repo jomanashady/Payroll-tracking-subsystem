@@ -18,7 +18,7 @@ export class Department {
   @Prop({ type: String })
   description?: string;
 
-  @Prop({ type: Types.ObjectId, ref: Position.name })
+  @Prop({ type: Types.ObjectId, ref: 'Position' })
   headPositionId?: Types.ObjectId;
 
   @Prop({ type: Boolean, default: true })

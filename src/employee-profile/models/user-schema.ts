@@ -61,7 +61,7 @@ export class UserProfileBase {
   @Prop({ type: String })
   profilePictureUrl?: string;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeSystemRole.name })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeSystemRole' })
   accessProfileId?: Types.ObjectId;
 }
 

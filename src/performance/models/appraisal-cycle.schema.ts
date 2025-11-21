@@ -11,10 +11,10 @@ export type AppraisalCycleDocument = HydratedDocument<AppraisalCycle>;
 
 @Schema({ _id: false })
 export class CycleTemplateAssignment {
-  @Prop({ type: Types.ObjectId, ref: AppraisalTemplate.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalTemplate', required: true })
   templateId: Types.ObjectId;
 
-  @Prop({ type: [Types.ObjectId], ref: Department.name, default: [] })
+  @Prop({ type: [Types.ObjectId], ref: 'Department', default: [] })
   departmentIds: Types.ObjectId[];
 }
 

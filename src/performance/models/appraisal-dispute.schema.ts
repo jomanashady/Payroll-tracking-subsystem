@@ -13,16 +13,16 @@ export class AppraisalDispute {
   @Prop({ type: Types.ObjectId, auto: true })
   _id: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: AppraisalRecord.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalRecord', required: true })
   appraisalId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: AppraisalAssignment.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalAssignment', required: true })
   assignmentId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: AppraisalCycle.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'AppraisalCycle', required: true })
   cycleId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
   raisedByEmployeeId: Types.ObjectId;
 
   @Prop({ type: String, required: true })
@@ -41,7 +41,7 @@ export class AppraisalDispute {
   })
   status: AppraisalDisputeStatus;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile' })
   assignedReviewerEmployeeId?: Types.ObjectId;
 
   @Prop({ type: String })
@@ -50,7 +50,7 @@ export class AppraisalDispute {
   @Prop({ type: Date })
   resolvedAt?: Date;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile' })
   resolvedByEmployeeId?: Types.ObjectId;
 }
 

@@ -86,10 +86,10 @@ export class AppraisalTemplate {
   @Prop({ type: String })
   instructions?: string;
 
-  @Prop({ type: [Types.ObjectId], ref: Department.name, default: [] })
+  @Prop({ type: [Types.ObjectId], ref: 'Department', default: [] })
   applicableDepartmentIds: Types.ObjectId[];
 
-  @Prop({ type: [Types.ObjectId], ref: Position.name, default: [] })
+  @Prop({ type: [Types.ObjectId], ref: 'Position', default: [] })
   applicablePositionIds: Types.ObjectId[];
 
   @Prop({ type: Boolean, default: true })

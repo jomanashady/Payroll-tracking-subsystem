@@ -18,10 +18,10 @@ export class Position {
   @Prop({ type: String })
   description?: string;
 
-  @Prop({ type: Types.ObjectId, ref: Department.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'Department', required: true })
   departmentId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: Position.name })
+  @Prop({ type: Types.ObjectId, ref: 'Position' })
   reportsToPositionId?: Types.ObjectId;
 
   @Prop({ type: Boolean, default: true })

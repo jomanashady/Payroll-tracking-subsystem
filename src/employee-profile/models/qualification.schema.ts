@@ -5,7 +5,7 @@ import { EmployeeProfile } from './employee-profile.schema';
 
 @Schema({ collection: 'employee_qualifications', timestamps: true })
 export class EmployeeQualification {
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
   employeeProfileId: Types.ObjectId;
 
   @Prop({ type: String, required: true })

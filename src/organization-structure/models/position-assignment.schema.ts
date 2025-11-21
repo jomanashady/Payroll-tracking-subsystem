@@ -12,13 +12,13 @@ export class PositionAssignment {
   @Prop({ type: Types.ObjectId, auto: true })
   _id: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
   employeeProfileId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: Position.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'Position', required: true })
   positionId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: Department.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'Department', required: true })
   departmentId: Types.ObjectId; // snapshot of owning department at assignment time
 
   @Prop({ type: Date, required: true })
@@ -27,7 +27,7 @@ export class PositionAssignment {
   @Prop({ type: Date })
   endDate?: Date;
 
-  @Prop({ type: Types.ObjectId, ref: StructureChangeRequest.name })
+  @Prop({ type: Types.ObjectId, ref: 'StructureChangeRequest' })
   changeRequestId?: Types.ObjectId;
 
   @Prop({ type: String })
