@@ -6,9 +6,6 @@ export type PositionDocument = HydratedDocument<Position>;
 
 @Schema({ collection: 'positions', timestamps: true })
 export class Position {
-  @Prop({ type: Types.ObjectId, auto: true })
-  _id: Types.ObjectId;
-
   @Prop({ type: String, required: true, unique: true })
   code: string;
 
@@ -18,10 +15,10 @@ export class Position {
   @Prop({ type: String })
   description?: string;
 
-  @Prop({ type: Types.ObjectId, ref: Department.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'Department', required: true })
   departmentId: Types.ObjectId;
 
-  @Prop({ type: Types.ObjectId, ref: Position.name })
+  @Prop({ type: Types.ObjectId, ref: 'Position' })
   reportsToPositionId?: Types.ObjectId;
 
   @Prop({ type: Boolean, default: true })

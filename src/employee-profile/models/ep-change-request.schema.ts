@@ -8,7 +8,7 @@ export class EmployeeProfileChangeRequest {
   @Prop({ type: String, required: true, unique: true })
   requestId: string;
 
-  @Prop({ type: Types.ObjectId, ref: EmployeeProfile.name, required: true })
+  @Prop({ type: Types.ObjectId, ref: 'EmployeeProfile', required: true })
   employeeProfileId: Types.ObjectId;
 
   @Prop({ type: String, required: true })

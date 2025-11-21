@@ -17,9 +17,6 @@ export type EmployeeProfileDocument = HydratedDocument<EmployeeProfile>;
 
 @Schema({ collection: 'employee_profiles', timestamps: true })
 export class EmployeeProfile extends UserProfileBase {
-  @Prop({ type: Types.ObjectId, auto: true })
-  _id: Types.ObjectId;
-
   // Core IDs
   @Prop({ type: String, required: true, unique: true })
   employeeNumber: string; // HR/Payroll number
