@@ -8,6 +8,9 @@ import { AttachmentType } from '../leaves/enums/attachment-type.enum';
 import { AccrualMethod } from '../leaves/enums/accrual-method.enum';
 import { RoundingRule } from '../leaves/enums/rounding-rule.enum';
 import { LeaveStatus } from '../leaves/enums/leave-status.enum';
+import { CalendarSchema } from '../leaves/models/calendar.schema';
+import { LeaveAdjustmentSchema } from '../leaves/models/leave-adjustment.schema';
+import { AdjustmentType } from '../leaves/enums/adjustment-type.enum';
 
 export async function seedLeaves(connection: mongoose.Connection, employees: any) {
   const LeaveCategoryModel = connection.model('LeaveCategory', LeaveCategorySchema);
@@ -15,6 +18,8 @@ export async function seedLeaves(connection: mongoose.Connection, employees: any
   const LeavePolicyModel = connection.model('LeavePolicy', LeavePolicySchema);
   const LeaveEntitlementModel = connection.model('LeaveEntitlement', LeaveEntitlementSchema);
   const LeaveRequestModel = connection.model('LeaveRequest', LeaveRequestSchema);
+  const CalendarModel = connection.model('Calendar', CalendarSchema);
+  const LeaveAdjustmentModel = connection.model('LeaveAdjustment', LeaveAdjustmentSchema);
 
   console.log('Clearing Leaves Data...');
   await LeaveCategoryModel.deleteMany({});
@@ -22,6 +27,8 @@ export async function seedLeaves(connection: mongoose.Connection, employees: any
   await LeavePolicyModel.deleteMany({});
   await LeaveEntitlementModel.deleteMany({});
   await LeaveRequestModel.deleteMany({});
+  await CalendarModel.deleteMany({});
+  await LeaveAdjustmentModel.deleteMany({});
 
   console.log('Seeding Leave Categories...');
   const annualCategory = await LeaveCategoryModel.create({
@@ -127,6 +134,31 @@ export async function seedLeaves(connection: mongoose.Connection, employees: any
     ],
   });
   console.log('Leave Requests seeded.');
+
+  console.log('Seeding Calendar...');
+  await CalendarModel.create({
+    year: new Date().getFullYear(),
+    holidays: [], // Assuming no holidays for now, or we could seed some if Holiday model was available
+    blockedPeriods: [
+      {
+        from: new Date(new Date().getFullYear(), 11, 25), // Dec 25
+        to: new Date(new Date().getFullYear(), 11, 31), // Dec 31
+        reason: 'End of Year Freeze',
+      },
+    ],
+  });
+  console.log('Calendar seeded.');
+
+  console.log('Seeding Leave Adjustments...');
+  await LeaveAdjustmentModel.create({
+    employeeId: employees.alice._id,
+    leaveTypeId: annualLeave._id,
+    adjustmentType: AdjustmentType.ADD,
+    amount: 2,
+    reason: 'Bonus days for project completion',
+    hrUserId: employees.alice._id, // Alice adjusting her own leave for demo purposes
+  });
+  console.log('Leave Adjustments seeded.');
 
   return {
     categories: { annualCategory, sickCategory },

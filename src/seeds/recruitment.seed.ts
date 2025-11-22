@@ -10,6 +10,14 @@ import { TerminationInitiation } from '../recruitment/enums/termination-initiati
 import { OfferSchema } from '../recruitment/models/offer.schema';
 import { ContractSchema } from '../recruitment/models/contract.schema';
 import { OfferResponseStatus } from '../recruitment/enums/offer-response-status.enum';
+import { InterviewSchema } from '../recruitment/models/interview.schema';
+import { InterviewMethod } from '../recruitment/enums/interview-method.enum';
+import { InterviewStatus } from '../recruitment/enums/interview-status.enum';
+import { AssessmentResultSchema } from '../recruitment/models/assessment-result.schema';
+import { ReferralSchema } from '../recruitment/models/referral.schema';
+import { ApplicationStatusHistorySchema } from '../recruitment/models/application-history.schema';
+import { ClearanceChecklistSchema } from '../recruitment/models/clearance-checklist.schema';
+import { ApprovalStatus } from '../recruitment/enums/approval-status.enum';
 
 export async function seedRecruitment(connection: mongoose.Connection, employees: any, departments: any) {
   const JobTemplateModel = connection.model('JobTemplate', JobTemplateSchema);
@@ -19,6 +27,11 @@ export async function seedRecruitment(connection: mongoose.Connection, employees
   const TerminationRequestModel = connection.model('TerminationRequest', TerminationRequestSchema);
   const OfferModel = connection.model('Offer', OfferSchema);
   const ContractModel = connection.model('Contract', ContractSchema);
+  const InterviewModel = connection.model('Interview', InterviewSchema);
+  const AssessmentResultModel = connection.model('AssessmentResult', AssessmentResultSchema);
+  const ReferralModel = connection.model('Referral', ReferralSchema);
+  const ApplicationStatusHistoryModel = connection.model('ApplicationStatusHistory', ApplicationStatusHistorySchema);
+  const ClearanceChecklistModel = connection.model('ClearanceChecklist', ClearanceChecklistSchema);
 
   console.log('Clearing Recruitment Data...');
   await JobTemplateModel.deleteMany({});
@@ -28,6 +41,11 @@ export async function seedRecruitment(connection: mongoose.Connection, employees
   await TerminationRequestModel.deleteMany({});
   await OfferModel.deleteMany({});
   await ContractModel.deleteMany({});
+  await InterviewModel.deleteMany({});
+  await AssessmentResultModel.deleteMany({});
+  await ReferralModel.deleteMany({});
+  await ApplicationStatusHistoryModel.deleteMany({});
+  await ClearanceChecklistModel.deleteMany({});
 
   console.log('Seeding Job Templates...');
   const softwareEngineerTemplate = await JobTemplateModel.create({
@@ -111,6 +129,73 @@ export async function seedRecruitment(connection: mongoose.Connection, employees
     contractId: contractJohn._id,
   });
   console.log('Termination Requests seeded.');
+
+  console.log('Seeding Referrals...');
+  await ReferralModel.create({
+    referringEmployeeId: employees.alice._id,
+    candidateId: candidateJohn._id,
+    role: 'Software Engineer',
+    level: 'Mid-Senior',
+  });
+  console.log('Referrals seeded.');
+
+  console.log('Seeding Interviews...');
+  const interviewJohn = await InterviewModel.create({
+    applicationId: applicationJohn._id,
+    stage: ApplicationStage.DEPARTMENT_INTERVIEW,
+    scheduledDate: new Date(),
+    method: InterviewMethod.VIDEO,
+    panel: [employees.alice._id],
+    status: InterviewStatus.COMPLETED,
+  });
+  console.log('Interviews seeded.');
+
+  console.log('Seeding Assessment Results...');
+  await AssessmentResultModel.create({
+    interviewId: interviewJohn._id,
+    interviewerId: employees.alice._id,
+    score: 85,
+    comments: 'Strong technical skills, good cultural fit.',
+  });
+  console.log('Assessment Results seeded.');
+
+  console.log('Seeding Application History...');
+  await ApplicationStatusHistoryModel.create({
+    applicationId: applicationJohn._id,
+    oldStage: ApplicationStage.SCREENING,
+    newStage: ApplicationStage.DEPARTMENT_INTERVIEW,
+    oldStatus: ApplicationStatus.SUBMITTED,
+    newStatus: ApplicationStatus.IN_PROCESS,
+    changedBy: employees.alice._id,
+  });
+  console.log('Application History seeded.');
+
+  console.log('Seeding Clearance Checklists...');
+  await ClearanceChecklistModel.create({
+    terminationId: terminationRequest._id,
+    items: [
+      {
+        department: 'IT',
+        status: ApprovalStatus.APPROVED,
+        comments: 'Laptop returned',
+        updatedBy: employees.alice._id,
+        updatedAt: new Date(),
+      },
+      {
+        department: 'Finance',
+        status: ApprovalStatus.PENDING,
+      }
+    ],
+    equipmentList: [
+      {
+        name: 'MacBook Pro',
+        returned: true,
+        condition: 'Good',
+      }
+    ],
+    cardReturned: true,
+  });
+  console.log('Clearance Checklists seeded.');
 
   return {
     templates: { softwareEngineerTemplate, hrManagerTemplate },
