@@ -3,6 +3,8 @@ import {
   NotFoundException,
   BadRequestException,
   ForbiddenException,
+  Inject,
+  forwardRef,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
@@ -14,6 +16,10 @@ import {
   EmployeeProfileDocument,
 } from '../employee-profile/models/employee-profile.schema';
 import { EmployeeStatus } from '../employee-profile/enums/employee-profile.enums';
+import { EmployeeProfileService } from '../employee-profile/employee-profile.service';
+import { PayrollConfigurationService } from '../payroll-configuration/payroll-configuration.service';
+import { LeavesService } from '../leaves/leaves.service';
+import { TimeManagementService } from '../time-management/Services/TimeManagementService';
 import { paySlip, PayslipDocument } from '../payroll-execution/models/payslip.schema';
 import { payrollRuns, payrollRunsDocument } from '../payroll-execution/models/payrollRuns.schema';
 import { LeaveEntitlement, LeaveEntitlementDocument } from '../leaves/models/leave-entitlement.schema';
@@ -55,6 +61,14 @@ export class PayrollTrackingService {
     @InjectModel(refunds.name) private readonly refundModel: Model<refunds>,
     @InjectModel(EmployeeProfile.name)
     private readonly employeeProfileModel: Model<EmployeeProfileDocument>,
+    @Inject(forwardRef(() => EmployeeProfileService))
+    private readonly employeeProfileService: EmployeeProfileService,
+    @Inject(PayrollConfigurationService)
+    private readonly payrollConfigurationService: PayrollConfigurationService,
+    @Inject(LeavesService)
+    private readonly leavesService: LeavesService,
+    @Inject(TimeManagementService)
+    private readonly timeManagementService: TimeManagementService,
     @InjectModel(paySlip.name) private readonly payslipModel: Model<PayslipDocument>,
     @InjectModel(payrollRuns.name) private readonly payrollRunsModel: Model<payrollRunsDocument>,
     @InjectModel(LeaveEntitlement.name)
@@ -117,6 +131,7 @@ export class PayrollTrackingService {
   /**
    * Validates that an employee exists in the employee-profile collection.
    * Optionally checks if the employee is active.
+   * Uses EmployeeProfileService for proper validation and error handling.
    * @param employeeId - The employee ID to validate
    * @param checkActive - If true, also validates that employee status is ACTIVE
    * @returns The validated ObjectId
@@ -129,13 +144,8 @@ export class PayrollTrackingService {
   ): Promise<Types.ObjectId> {
     const validEmployeeId = this.validateObjectId(employeeId, 'employeeId');
 
-    const employee = await this.employeeProfileModel.findById(validEmployeeId);
-
-    if (!employee) {
-      throw new NotFoundException(
-        `Employee with ID ${employeeId} not found in employee-profile`,
-      );
-    }
+    // Use EmployeeProfileService for validation (handles NotFoundException automatically)
+    const employee = await this.employeeProfileService.findOne(employeeId);
 
     if (checkActive && employee.status !== EmployeeStatus.ACTIVE) {
       throw new BadRequestException(
@@ -2316,18 +2326,11 @@ export class PayrollTrackingService {
   // REQ-PY-3: Employees view base salary according to employment contract
   async getEmployeeBaseSalary(employeeId: string) {
     try {
-      const validEmployeeId = await this.validateEmployeeExists(employeeId, false);
-      const employee = await this.employeeProfileModel
-        .findById(validEmployeeId)
-        .populate('payGradeId', 'name baseSalary')
-        .exec();
-
-      if (!employee) {
-        throw new NotFoundException(`Employee with ID ${employeeId} not found`);
-      }
+      // Use EmployeeProfileService for proper validation and populated data
+      const employee = await this.employeeProfileService.findOne(employeeId);
 
       return {
-        employeeId: employee._id,
+        employeeId: (employee as any)._id?.toString() || (employee as any).id?.toString() || employeeId,
         employeeNumber: employee.employeeNumber,
         firstName: employee.firstName,
         lastName: employee.lastName,
@@ -2353,17 +2356,9 @@ export class PayrollTrackingService {
   // REQ-PY-5: Employees view compensation for unused/encashed leave days
   async getLeaveEncashmentByEmployeeId(employeeId: string, payrollRunId?: string) {
     try {
-      const validEmployeeId = await this.validateEmployeeExists(employeeId, false);
-
-      // Get employee profile for base salary calculation
-      const employee = await this.employeeProfileModel
-        .findById(validEmployeeId)
-        .populate('payGradeId', 'name baseSalary')
-        .exec();
-
-      if (!employee) {
-        throw new NotFoundException(`Employee with ID ${employeeId} not found`);
-      }
+      // Get employee profile using EmployeeProfileService (includes payGradeId populated)
+      const employee = await this.employeeProfileService.findOne(employeeId);
+      const validEmployeeId = new Types.ObjectId((employee as any)._id?.toString() || employeeId);
 
       // Get leave entitlements with full details
       const leaveEntitlements = await this.leaveEntitlementModel
@@ -2631,17 +2626,9 @@ export class PayrollTrackingService {
   // REQ-PY-10: Employees view salary deductions due to misconduct/absenteeism
   async getMisconductDeductions(employeeId: string, payslipId?: string) {
     try {
-      const validEmployeeId = await this.validateEmployeeExists(employeeId, false);
-
-      // Get employee profile for base salary calculation
-      const employee = await this.employeeProfileModel
-        .findById(validEmployeeId)
-        .populate('payGradeId', 'name baseSalary')
-        .exec();
-
-      if (!employee) {
-        throw new NotFoundException(`Employee with ID ${employeeId} not found`);
-      }
+      // Get employee profile using EmployeeProfileService (includes payGradeId populated)
+      const employee = await this.employeeProfileService.findOne(employeeId);
+      const validEmployeeId = new Types.ObjectId((employee as any)._id?.toString() || employeeId);
 
       // Get payroll run and payslip
       let payrollRun;
@@ -2868,17 +2855,9 @@ export class PayrollTrackingService {
   // REQ-PY-11: Employees view deductions for unpaid leave days
   async getUnpaidLeaveDeductions(employeeId: string, payslipId?: string) {
     try {
-      const validEmployeeId = await this.validateEmployeeExists(employeeId, false);
-
-      // Get employee profile for base salary calculation
-      const employee = await this.employeeProfileModel
-        .findById(validEmployeeId)
-        .populate('payGradeId', 'name baseSalary')
-        .exec();
-
-      if (!employee) {
-        throw new NotFoundException(`Employee with ID ${employeeId} not found`);
-      }
+      // Get employee profile using EmployeeProfileService (includes payGradeId populated)
+      const employee = await this.employeeProfileService.findOne(employeeId);
+      const validEmployeeId = new Types.ObjectId((employee as any)._id?.toString() || employeeId);
 
       // Get payroll run and payslip
       let payrollRun;
@@ -3218,15 +3197,17 @@ export class PayrollTrackingService {
         .select('_id code title')
         .exec();
 
-      // Get employees in this department (using primaryDepartmentId)
-      const employees = await this.employeeProfileModel
-        .find({ 
-          primaryDepartmentId: validDepartmentId,
-          status: EmployeeStatus.ACTIVE, // Only active employees
-        })
-        .populate('primaryPositionId', 'code title')
-        .select('_id firstName lastName employeeNumber primaryPositionId')
-        .exec();
+      // Get employees in this department using EmployeeProfileService
+      const employeesData = await this.employeeProfileService.findByDepartment(departmentId);
+      const employees = employeesData
+        .filter(emp => emp.status === EmployeeStatus.ACTIVE)
+        .map(emp => ({
+          _id: new Types.ObjectId((emp as any)._id?.toString() || (emp as any).id?.toString()),
+          firstName: emp.firstName,
+          lastName: emp.lastName,
+          employeeNumber: emp.employeeNumber,
+          primaryPositionId: emp.primaryPositionId,
+        }));
 
       const employeeIds = employees.map((emp) => emp._id);
 
@@ -3391,10 +3372,10 @@ export class PayrollTrackingService {
                 code: (employee.primaryPositionId as any)?.code,
               } : null,
             },
-            grossSalary: p.totalGrossSalary,
-            deductions: p.totaDeductions,
-            netPay: p.netPay,
-            paymentStatus: p.paymentStatus,
+          grossSalary: p.totalGrossSalary,
+          deductions: p.totaDeductions,
+          netPay: p.netPay,
+          paymentStatus: p.paymentStatus,
             payslipId: p._id,
           };
         }),
@@ -3440,15 +3421,12 @@ export class PayrollTrackingService {
           throw new NotFoundException(`Department with ID ${departmentId} not found`);
         }
         
-        // Get employees in this department
-        const employees = await this.employeeProfileModel
-          .find({ 
-            primaryDepartmentId: validDepartmentId,
-            status: EmployeeStatus.ACTIVE,
-          })
-          .select('_id')
-          .exec();
-        employeeIds = employees.map((emp) => emp._id);
+        // Get employees in this department using EmployeeProfileService
+        const employees = await this.employeeProfileService.findByDepartment(departmentId);
+        // Filter to only active employees and extract IDs
+        employeeIds = employees
+          .filter(emp => emp.status === EmployeeStatus.ACTIVE)
+          .map((emp) => new Types.ObjectId((emp as any)._id?.toString() || (emp as any).id?.toString()));
         
         if (employeeIds.length === 0) {
           // Return empty summary if no employees in department
@@ -3624,15 +3602,12 @@ export class PayrollTrackingService {
           throw new NotFoundException(`Department with ID ${departmentId} not found`);
         }
         
-        // Get employees in this department
-        const employees = await this.employeeProfileModel
-          .find({ 
-            primaryDepartmentId: validDepartmentId,
-            status: EmployeeStatus.ACTIVE,
-          })
-          .select('_id')
-          .exec();
-        employeeIds = employees.map((emp) => emp._id);
+        // Get employees in this department using EmployeeProfileService
+        const employees = await this.employeeProfileService.findByDepartment(departmentId);
+        // Filter to only active employees and extract IDs
+        employeeIds = employees
+          .filter(emp => emp.status === EmployeeStatus.ACTIVE)
+          .map((emp) => new Types.ObjectId((emp as any)._id?.toString() || (emp as any).id?.toString()));
         
         if (employeeIds.length === 0) {
           // Return empty report if no employees in department
@@ -3954,16 +3929,12 @@ export class PayrollTrackingService {
       // Calculate summary for each department
       const departmentSummaries = await Promise.all(
         departments.map(async (dept) => {
-          // Get employees in this department
-          const employees = await this.employeeProfileModel
-            .find({
-              primaryDepartmentId: dept._id,
-              status: EmployeeStatus.ACTIVE,
-            })
-            .select('_id')
-            .exec();
-
-          const employeeIds = employees.map((emp) => emp._id);
+          // Get employees in this department using EmployeeProfileService
+          const employees = await this.employeeProfileService.findByDepartment(dept._id.toString());
+          // Filter to only active employees and extract IDs
+          const employeeIds = employees
+            .filter(emp => emp.status === EmployeeStatus.ACTIVE)
+            .map((emp) => new Types.ObjectId((emp as any)._id?.toString() || (emp as any).id?.toString()));
 
           // Filter payslips for this department
           const deptPayslips = payslips.filter((p) => {

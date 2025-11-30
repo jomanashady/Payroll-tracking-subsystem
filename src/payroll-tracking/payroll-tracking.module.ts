@@ -9,8 +9,7 @@ import { PayrollConfigurationModule } from '../payroll-configuration/payroll-con
 import { PayrollExecutionModule } from '../payroll-execution/payroll-execution.module';
 import { EmployeeProfileModule } from '../employee-profile/employee-profile.module';
 import { LeavesModule } from '../leaves/leaves.module';
-// Note: Not importing TimeManagementModule to avoid registering AttendanceCorrectionRequestSchema
-// We only need AttendanceRecord and TimeException schemas, which are registered directly below
+import { TimeManagementModule } from '../time-management/time-management.module';
 import { OrganizationStructureModule } from '../organization-structure/organization-structure.module';
 import {
   EmployeeProfile,
@@ -43,11 +42,10 @@ import { RoleGuard } from './guards/role.guard';
 @Module({
   imports: [
     // External module dependencies
-    PayrollConfigurationModule,
-    EmployeeProfileModule, // Import to access EmployeeProfile model for validation
+    PayrollConfigurationModule, // For pay grade and payroll configuration data
+    EmployeeProfileModule, // Import to access EmployeeProfile model and service for validation
     LeavesModule, // For leave encashment and unpaid leave data (REQ-PY-5, REQ-PY-11)
-    // Note: TimeManagementModule not imported - we only need specific schemas (AttendanceRecord, TimeException)
-    // which are registered directly below to avoid importing problematic AttendanceCorrectionRequestSchema
+    TimeManagementModule, // For attendance records and time exceptions (REQ-PY-10)
     OrganizationStructureModule, // For department reports (REQ-PY-38)
     // Circular dependency with PayrollExecutionModule (both reference each other)
     forwardRef(() => PayrollExecutionModule),
