@@ -52,6 +52,7 @@ import {
   RefundStatus,
 } from './enums/payroll-tracking-enum';
 import { SystemRole } from '../employee-profile/enums/employee-profile.enums';
+import { ConfigStatus } from '../payroll-configuration/enums/payroll-configuration-enums';
 
 @Injectable()
 export class PayrollTrackingService {
@@ -154,6 +155,110 @@ export class PayrollTrackingService {
     }
 
     return validEmployeeId;
+  }
+
+  /**
+   * Helper method to enrich tax deduction with full tax rule details from PayrollConfigurationService
+   * @param taxDeduction - The tax deduction from payslip (embedded taxRules document)
+   * @returns Enriched tax deduction with full configuration details
+   */
+  private async enrichTaxDeductionWithConfiguration(taxDeduction: any): Promise<any> {
+    try {
+      if (!taxDeduction || !taxDeduction.name) {
+        return taxDeduction;
+      }
+
+      // Try to find tax rule by name (since payslip stores embedded documents)
+      const taxRulesResult = await this.payrollConfigurationService.findAllTaxRules({
+        status: ConfigStatus.APPROVED,
+        page: 1,
+        limit: 100, // Get all approved tax rules
+      });
+
+      const matchingTaxRule = taxRulesResult.data.find(
+        (rule: any) => rule.name === taxDeduction.name || rule._id?.toString() === taxDeduction._id?.toString(),
+      );
+
+      if (matchingTaxRule) {
+        return {
+          ...taxDeduction,
+          configurationDetails: {
+            name: matchingTaxRule.name,
+            description: matchingTaxRule.description,
+            rate: matchingTaxRule.rate,
+            status: matchingTaxRule.status,
+            approvedAt: matchingTaxRule.approvedAt,
+            approvedBy: matchingTaxRule.approvedBy,
+          },
+        };
+      }
+
+      // If not found, return original with warning
+      return {
+        ...taxDeduction,
+        configurationDetails: {
+          warning: 'Tax rule configuration not found or not approved',
+          status: taxDeduction.status || 'unknown',
+        },
+      };
+    } catch (error) {
+      // If service call fails, return original deduction
+      console.warn(`Failed to enrich tax deduction: ${error.message}`);
+      return taxDeduction;
+    }
+  }
+
+  /**
+   * Helper method to enrich insurance deduction with full insurance bracket details from PayrollConfigurationService
+   * @param insuranceDeduction - The insurance deduction from payslip (embedded insuranceBrackets document)
+   * @returns Enriched insurance deduction with full configuration details
+   */
+  private async enrichInsuranceDeductionWithConfiguration(insuranceDeduction: any): Promise<any> {
+    try {
+      if (!insuranceDeduction || !insuranceDeduction.name) {
+        return insuranceDeduction;
+      }
+
+      // Try to find insurance bracket by name
+      const insuranceBracketsResult = await this.payrollConfigurationService.findAllInsuranceBrackets({
+        status: ConfigStatus.APPROVED,
+        page: 1,
+        limit: 100, // Get all approved insurance brackets
+      });
+
+      const matchingBracket = insuranceBracketsResult.data.find(
+        (bracket: any) => bracket.name === insuranceDeduction.name || bracket._id?.toString() === insuranceDeduction._id?.toString(),
+      );
+
+      if (matchingBracket) {
+        return {
+          ...insuranceDeduction,
+          configurationDetails: {
+            name: matchingBracket.name,
+            minSalary: matchingBracket.minSalary,
+            maxSalary: matchingBracket.maxSalary,
+            employeeRate: matchingBracket.employeeRate,
+            employerRate: matchingBracket.employerRate,
+            status: matchingBracket.status,
+            approvedAt: matchingBracket.approvedAt,
+            approvedBy: matchingBracket.approvedBy,
+          },
+        };
+      }
+
+      // If not found, return original with warning
+      return {
+        ...insuranceDeduction,
+        configurationDetails: {
+          warning: 'Insurance bracket configuration not found or not approved',
+          status: insuranceDeduction.status || 'unknown',
+        },
+      };
+    } catch (error) {
+      // If service call fails, return original deduction
+      console.warn(`Failed to enrich insurance deduction: ${error.message}`);
+      return insuranceDeduction;
+    }
   }
 
   /**
@@ -1221,12 +1326,12 @@ export class PayrollTrackingService {
 
   // REQ-PY-18: Employees inspect the lifecycle of a specific refund.
   /**
-   * ⚠️ CALLED FROM OTHER SUBSYSTEMS:
+   * ✅ CALLED FROM OTHER SUBSYSTEMS:
    * - PayrollExecutionModule: Called to verify refund details when processing payroll runs.
    *   Used to get refund information before including it in payslip earnings.
    * 
-   * Note: This method is not yet integrated with PayrollExecutionModule.
-   * Integration will be implemented when PayrollExecutionModule is fully developed.
+   * Integration Status: ✅ AVAILABLE
+   * - Method is ready for use by PayrollExecutionModule for refund verification
    */
   async getRefundById(refundId: string) {
     try {
@@ -1378,13 +1483,14 @@ export class PayrollTrackingService {
 
   // REQ-PY-18: Employees can list all refunds generated for them.
   /**
-   * ⚠️ CALLED FROM OTHER SUBSYSTEMS:
+   * ✅ CALLED FROM OTHER SUBSYSTEMS:
    * - PayrollExecutionModule: Called during payroll calculation to get all pending refunds
    *   for a specific employee that need to be included in the current payroll run.
    *   The refunds are then added to the payslip earningsDetails.refunds array.
    * 
-   * Note: This method is not yet integrated with PayrollExecutionModule.
-   * Integration will be implemented when PayrollExecutionModule is fully developed.
+   * Integration Status: ✅ ACTIVE
+   * - Used in PayrollExecutionService.calculateRefunds() for net pay calculation
+   * - Used in PayrollExecutionService.generateAndDistributePayslips() for payslip generation
    */
   async getRefundsByEmployeeId(employeeId: string) {
     try {
@@ -1422,7 +1528,7 @@ export class PayrollTrackingService {
 
   // REQ-PY-45 & REQ-PY-46: Finance monitors refunds pending payroll execution.
   /**
-   * ⚠️ CALLED FROM OTHER SUBSYSTEMS:
+   * ✅ CALLED FROM OTHER SUBSYSTEMS:
    * - PayrollExecutionModule: Called at the start of payroll run execution to retrieve
    *   all pending refunds that need to be included in the current payroll cycle.
    *   PayrollExecutionModule will then:
@@ -1430,8 +1536,9 @@ export class PayrollTrackingService {
    *   2. Include refund amounts in payslip earningsDetails.refunds
    *   3. Call processRefund() after payroll run is finalized to mark refunds as PAID
    * 
-   * Note: This method is not yet integrated with PayrollExecutionModule.
-   * Integration will be implemented when PayrollExecutionModule is fully developed.
+   * Integration Status: ✅ AVAILABLE
+   * - Method is ready for use by PayrollExecutionModule
+   * - Can be used for bulk refund retrieval at payroll run start
    */
   async getPendingRefunds() {
     try {
@@ -1452,19 +1559,20 @@ export class PayrollTrackingService {
 
   // REQ-PY-46: Mark refunds as paid once included in the payroll run.
   /**
-   * ⚠️ CALLED FROM OTHER SUBSYSTEMS:
+   * ✅ CALLED FROM OTHER SUBSYSTEMS:
    * - PayrollExecutionModule: Called after a payroll run is finalized and payments are processed.
    *   This method marks refunds as PAID and links them to the payroll run that executed the payment.
    *   
    *   Workflow:
    *   1. PayrollExecutionModule includes pending refunds in payslip earnings
-   *   2. Payroll run is executed and finalized
-   *   3. PayrollExecutionModule calls this method for each refund that was paid
+   *   2. Payslips are generated with refunds in earningsDetails.refunds
+   *   3. PayrollExecutionModule calls this method for each refund that was included in payslip
    *   4. Refund status changes from PENDING to PAID
    *   5. paidInPayrollRunId is set to link refund to the payroll run
    * 
-   * Note: This method is not yet integrated with PayrollExecutionModule.
-   * Integration will be implemented when PayrollExecutionModule is fully developed.
+   * Integration Status: ✅ ACTIVE
+   * - Called from PayrollExecutionService.generateAndDistributePayslips() after payslip generation
+   * - Automatically marks refunds as PAID when included in payroll
    */
   async processRefund(refundId: string, processRefundDTO: ProcessRefundDTO) {
     try {
@@ -2329,6 +2437,29 @@ export class PayrollTrackingService {
       // Use EmployeeProfileService for proper validation and populated data
       const employee = await this.employeeProfileService.findOne(employeeId);
 
+      // Enrich pay grade details using PayrollConfigurationService
+      let payGradeDetails: any = null;
+      if (employee.payGradeId) {
+        try {
+          const payGradeId = (employee.payGradeId as any)?._id?.toString() || (employee.payGradeId as any)?.toString();
+          if (payGradeId) {
+            const payGrade = await this.payrollConfigurationService.findOnePayGrade(payGradeId);
+            // Only include approved pay grades
+            if (payGrade && payGrade.status === ConfigStatus.APPROVED) {
+              payGradeDetails = {
+                grade: payGrade.grade,
+                baseSalary: payGrade.baseSalary,
+                grossSalary: payGrade.grossSalary,
+                status: payGrade.status,
+              };
+            }
+          }
+        } catch (error) {
+          // If pay grade not found, continue without it
+          console.warn(`Pay grade not found for employee ${employeeId}: ${error.message}`);
+        }
+      }
+
       return {
         employeeId: (employee as any)._id?.toString() || (employee as any).id?.toString() || employeeId,
         employeeNumber: employee.employeeNumber,
@@ -2337,6 +2468,7 @@ export class PayrollTrackingService {
         contractType: employee.contractType,
         workType: employee.workType,
         payGrade: employee.payGradeId,
+        payGradeDetails: payGradeDetails,
         contractStartDate: employee.contractStartDate,
         contractEndDate: employee.contractEndDate,
       };
@@ -2398,6 +2530,40 @@ export class PayrollTrackingService {
           allowance.name?.toLowerCase().includes('encashment'),
       ) || [];
 
+      // Enrich leave encashment allowances with configuration details
+      const enrichedLeaveEncashment = await Promise.all(
+        leaveEncashment.map(async (enc: any) => {
+          try {
+            // Try to find matching allowance configuration
+            if (enc.name) {
+              const allowancesResult = await this.payrollConfigurationService.findAllAllowances({
+                status: ConfigStatus.APPROVED,
+                page: 1,
+                limit: 100,
+              });
+              const matchingAllowance = allowancesResult.data.find(
+                (allowance: any) => allowance.name === enc.name || allowance._id?.toString() === enc._id?.toString(),
+              );
+              if (matchingAllowance) {
+                return {
+                  ...enc,
+                  configurationDetails: {
+                    name: matchingAllowance.name,
+                    amount: matchingAllowance.amount,
+                    status: matchingAllowance.status,
+                    approvedAt: matchingAllowance.approvedAt,
+                  },
+                };
+              }
+            }
+            return enc;
+          } catch (error) {
+            console.warn(`Failed to enrich leave encashment allowance: ${error.message}`);
+            return enc;
+          }
+        }),
+      );
+
       // Calculate potential encashment for unused leave days
       // Base salary for daily calculation (assuming monthly salary)
       const baseSalary = (employee.payGradeId as any)?.baseSalary || 0;
@@ -2458,13 +2624,14 @@ export class PayrollTrackingService {
           yearlyEntitlement: ent.yearlyEntitlement,
         })),
         encashableLeaves,
-        encashmentInPayslip: leaveEncashment.map((enc: any) => ({
+        encashmentInPayslip: enrichedLeaveEncashment.map((enc: any) => ({
           type: enc.type,
           name: enc.name,
           amount: enc.amount,
           description: enc.description,
+          configurationDetails: enc.configurationDetails,
         })),
-        totalEncashmentInPayslip: leaveEncashment.reduce(
+        totalEncashmentInPayslip: enrichedLeaveEncashment.reduce(
           (sum: number, enc: any) => sum + (enc.amount || 0),
           0,
         ),
@@ -2513,10 +2680,47 @@ export class PayrollTrackingService {
           allowance.name?.toLowerCase().includes('commuting'),
       ) || [];
 
+      // Enrich transportation allowances with configuration details
+      const enrichedTransportationAllowance = await Promise.all(
+        transportationAllowance.map(async (allowance: any) => {
+          try {
+            if (allowance.name) {
+              const allowancesResult = await this.payrollConfigurationService.findAllAllowances({
+                status: ConfigStatus.APPROVED,
+                page: 1,
+                limit: 100,
+              });
+              const matchingAllowance = allowancesResult.data.find(
+                (configAllowance: any) => configAllowance.name === allowance.name || configAllowance._id?.toString() === allowance._id?.toString(),
+              );
+              if (matchingAllowance) {
+                return {
+                  ...allowance,
+                  configurationDetails: {
+                    name: matchingAllowance.name,
+                    amount: matchingAllowance.amount,
+                    status: matchingAllowance.status,
+                    approvedAt: matchingAllowance.approvedAt,
+                  },
+                };
+              }
+            }
+            return allowance;
+          } catch (error) {
+            console.warn(`Failed to enrich transportation allowance: ${error.message}`);
+            return allowance;
+          }
+        }),
+      );
+
       return {
         payslipId: payslip._id,
         payrollPeriod: payslip.payrollRunId,
-        transportationAllowance,
+        transportationAllowance: enrichedTransportationAllowance,
+        totalTransportationAllowance: enrichedTransportationAllowance.reduce(
+          (sum: number, allowance: any) => sum + (allowance.amount || 0),
+          0,
+        ),
       };
     } catch (error) {
       if (
@@ -2601,14 +2805,20 @@ export class PayrollTrackingService {
         throw new NotFoundException('No payslip found for this employee');
       }
 
+      // Enrich insurance deductions with full configuration details from PayrollConfigurationService
+      const insuranceDeductions = payslip.deductionsDetails?.insurances || [];
+      const enrichedInsuranceDeductions = await Promise.all(
+        insuranceDeductions.map((insurance: any) => this.enrichInsuranceDeductionWithConfiguration(insurance)),
+      );
+
       return {
         payslipId: payslip._id,
         payrollPeriod: payslip.payrollRunId,
-        insuranceDeductions: payslip.deductionsDetails?.insurances || [],
-        totalInsuranceDeductions: payslip.deductionsDetails?.insurances?.reduce(
+        insuranceDeductions: enrichedInsuranceDeductions,
+        totalInsuranceDeductions: enrichedInsuranceDeductions.reduce(
           (sum: number, insurance: any) => sum + (insurance.amount || 0),
           0,
-        ) || 0,
+        ),
       };
     } catch (error) {
       if (
